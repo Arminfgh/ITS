@@ -486,11 +486,9 @@ Dieses Projekt ist lizenziert unter der MIT License - siehe [LICENSE](LICENSE) f
 
 **Armin**  
 Bewerber für Werkstudent (m/w/d) IT-Sicherheit  
-Borussia Dortmund GmbH & Co. KGaA
 
-📧 Email: [deine-email@example.com]  
-🔗 LinkedIn: [linkedin.com/in/dein-profil]  
-🐙 GitHub: [github.com/dein-username]
+📧 Email: arfgh2002@gmail.com
+
 
 ---
 
@@ -499,21 +497,6 @@ Borussia Dortmund GmbH & Co. KGaA
 - **Borussia Dortmund** - Für die Interview-Möglichkeit
 - **Python Community** - Für die großartigen Tools
 - **Open Source Contributors** - Für Inspiration
-
----
-
-## 📞 Kontakt & Support
-
-### **Interview-Termin**
-📅 **Datum:** 16.10.2025  
-🕐 **Zeit:** 12:30 Uhr  
-🏢 **Ort:** Borussia Dortmund GmbH & Co. KGaA
-
-### **Fragen?**
-
-- 💬 [Open an Issue](https://github.com/yourusername/secureoffice-hub/issues)
-- 📧 Email: [deine-email@example.com]
-- 📚 [Documentation](docs/)
 
 ---
 
