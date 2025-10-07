@@ -1,0 +1,35 @@
+# ============================================================================
+# DEVELOPMENT DEPENDENCIES
+# ============================================================================
+
+# Include production dependencies
+-r requirements.txt
+
+# Development Tools
+ipython>=8.16.0
+jupyter>=1.0.0
+notebook>=7.0.0
+
+# Debugging
+ipdb>=0.13.13
+pdbpp>=0.10.3
+
+# Performance Profiling
+memory-profiler>=0.61.0
+line-profiler>=4.1.0
+
+# Pre-commit Hooks
+pre-commit>=3.5.0
+
+# Type Checking
+types-requests>=2.31.0
+types-redis>=4.6.0
+
+# API Documentation
+mkdocstrings[python]>=0.23.0
+
+# Load Testing
+locust>=2.17.0
+
+# Code Coverage
+coverage[toml]>=7.3.0

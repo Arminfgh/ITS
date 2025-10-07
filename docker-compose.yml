@@ -1,0 +1,174 @@
+version: '3.8'
+
+# ============================================================================
+# SECUREOFFICE HUB - DOCKER COMPOSE
+# Complete production-ready stack
+# ============================================================================
+
+services:
+  # ==========================================================================
+  # API SERVICE (FastAPI)
+  # ==========================================================================
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: secureoffice-api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - SECUREOFFICE_ENV=production
+      - DATABASE_URL=sqlite:///./database/security.db
+      - REDIS_URL=redis://redis:6379/0
+      - LOG_LEVEL=INFO
+      - SECRET_KEY=${SECRET_KEY:-your-secret-key-change-in-production}
+      - API_KEY=${API_KEY:-your-api-key}
+    volumes:
+      - ./data:/app/data
+      - ./database:/app/database
+      - ./logs:/app/logs
+    depends_on:
+      - redis
+    networks:
+      - secureoffice-network
+    command: uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ==========================================================================
+  # DASHBOARD SERVICE (Streamlit)
+  # ==========================================================================
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: secureoffice-dashboard
+    restart: unless-stopped
+    ports:
+      - "8501:8501"
+    environment:
+      - SECUREOFFICE_ENV=production
+      - DATABASE_URL=sqlite:///./database/security.db
+      - API_URL=http://api:8000
+    volumes:
+      - ./data:/app/data
+      - ./database:/app/database
+    depends_on:
+      - api
+    networks:
+      - secureoffice-network
+    command: streamlit run dashboard/app.py --server.port 8501 --server.address 0.0.0.0
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ==========================================================================
+  # REDIS (Cache & Task Queue)
+  # ==========================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: secureoffice-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - secureoffice-network
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  # ==========================================================================
+  # CELERY WORKER (Background Tasks)
+  # ==========================================================================
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: secureoffice-worker
+    restart: unless-stopped
+    environment:
+      - SECUREOFFICE_ENV=production
+      - DATABASE_URL=sqlite:///./database/security.db
+      - REDIS_URL=redis://redis:6379/0
+    volumes:
+      - ./data:/app/data
+      - ./database:/app/database
+      - ./logs:/app/logs
+    depends_on:
+      - redis
+      - api
+    networks:
+      - secureoffice-network
+    command: celery -A workers.celery_app worker --loglevel=info
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A workers.celery_app inspect ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ==========================================================================
+  # CELERY BEAT (Scheduled Tasks)
+  # ==========================================================================
+  beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: secureoffice-beat
+    restart: unless-stopped
+    environment:
+      - SECUREOFFICE_ENV=production
+      - REDIS_URL=redis://redis:6379/0
+    volumes:
+      - ./logs:/app/logs
+    depends_on:
+      - redis
+      - worker
+    networks:
+      - secureoffice-network
+    command: celery -A workers.celery_app beat --loglevel=info
+
+  # ==========================================================================
+  # FLOWER (Celery Monitoring) - Optional
+  # ==========================================================================
+  flower:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: secureoffice-flower
+    restart: unless-stopped
+    ports:
+      - "5555:5555"
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+      - worker
+    networks:
+      - secureoffice-network
+    command: celery -A workers.celery_app flower --port=5555
+
+# ============================================================================
+# NETWORKS
+# ============================================================================
+networks:
+  secureoffice-network:
+    driver: bridge
+
+# ============================================================================
+# VOLUMES
+# ============================================================================
+volumes:
+  redis-data:
+    driver: local
